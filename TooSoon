@@ -1,0 +1,151 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract ReubenTimeToken is ERC721, ERC721Enumerable, Ownable, ReentrancyGuard {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;
+
+    uint256 public constant TOTAL_TOKENS = 4000;
+    uint256 public constant LOCKED_TOKENS = 2000;
+    uint256 public constant RESERVED_TOKENS = 1000;
+    uint256 public constant AUCTION_TOKENS = 1000;
+    uint256 public constant FLOOR_PRICE = 20 ether; // Assuming 1 ether = $1 for simplicity
+    uint256 public constant TOKEN_EXPIRY = 1719806400; // 12:00 AM 7 July 2024 (Unix timestamp)
+    uint256 public constant BUYBACK_WINDOW = 12 hours;
+    uint256 public constant TRANSFER_WINDOW = 48 hours;
+    uint256 public constant SECONDARY_ROYALTY_PERCENTAGE = 12;
+    uint256 public constant BUYBACK_PREMIUM_PERCENTAGE = 20;
+
+    struct TokenDetails {
+        uint256 purchasePrice;
+        uint256 lastTransferTime;
+        bool isGifted;
+        bool isAuctioned;
+    }
+
+    mapping(uint256 => TokenDetails) public tokenDetails;
+    mapping(uint256 => uint256) public tokenAuctions;
+
+    event TokenPurchased(uint256 tokenId, address buyer, uint256 price);
+    event TokenGifted(uint256 tokenId, address from, address to);
+    event TokenBoughtBack(uint256 tokenId, uint256 price);
+    event AuctionCreated(uint256 tokenId, uint256 startingPrice);
+    event AuctionBid(uint256 tokenId, address bidder, uint256 bidAmount);
+    event AuctionEnded(uint256 tokenId, address winner, uint256 winningBid);
+
+    constructor() ERC721("Reuben Time Token", "RTT") {
+        for (uint256 i = 1; i <= TOTAL_TOKENS; i++) {
+            _safeMint(address(this), i);
+            if (i <= LOCKED_TOKENS) {
+                tokenDetails[i] = TokenDetails(0, 0, false, false);
+            } else if (i <= LOCKED_TOKENS + RESERVED_TOKENS) {
+                tokenDetails[i] = TokenDetails(0, 0, false, false);
+            } else {
+                tokenDetails[i] = TokenDetails(0, 0, false, true);
+                createAuction(i);
+            }
+        }
+    }
+
+    function createAuction(uint256 tokenId) internal {
+        require(tokenId > LOCKED_TOKENS + RESERVED_TOKENS && tokenId <= TOTAL_TOKENS, "Invalid token for auction");
+        tokenAuctions[tokenId] = FLOOR_PRICE;
+        emit AuctionCreated(tokenId, FLOOR_PRICE);
+    }
+
+    function placeBid(uint256 tokenId) external payable {
+        require(tokenDetails[tokenId].isAuctioned, "Token not in auction");
+        require(msg.value > tokenAuctions[tokenId], "Bid too low");
+        require(block.timestamp < TOKEN_EXPIRY, "Tokens have expired");
+
+        address previousBidder = ownerOf(tokenId);
+        uint256 previousBid = tokenAuctions[tokenId];
+
+        if (previousBidder != address(this)) {
+            payable(previousBidder).transfer(previousBid);
+        }
+
+        _transfer(ownerOf(tokenId), msg.sender, tokenId);
+        tokenAuctions[tokenId] = msg.value;
+        tokenDetails[tokenId].purchasePrice = msg.value;
+        tokenDetails[tokenId].lastTransferTime = block.timestamp;
+
+        emit AuctionBid(tokenId, msg.sender, msg.value);
+    }
+
+    function buyReservedToken(uint256 tokenId) external payable {
+        require(tokenId > LOCKED_TOKENS && tokenId <= LOCKED_TOKENS + RESERVED_TOKENS, "Invalid reserved token");
+        require(msg.value >= FLOOR_PRICE, "Price too low");
+        require(block.timestamp < TOKEN_EXPIRY, "Tokens have expired");
+
+        _transfer(address(this), msg.sender, tokenId);
+        tokenDetails[tokenId].purchasePrice = msg.value;
+        tokenDetails[tokenId].lastTransferTime = block.timestamp;
+
+        emit TokenPurchased(tokenId, msg.sender, msg.value);
+    }
+
+    function giftToken(uint256 tokenId, address to) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        require(block.timestamp < TOKEN_EXPIRY, "Tokens have expired");
+
+        tokenDetails[tokenId].isGifted = true;
+        tokenDetails[tokenId].lastTransferTime = block.timestamp;
+        _transfer(msg.sender, to, tokenId);
+
+        emit TokenGifted(tokenId, msg.sender, to);
+    }
+
+    function buybackToken(uint256 tokenId) external payable onlyOwner {
+        require(block.timestamp <= TOKEN_EXPIRY + BUYBACK_WINDOW, "Buyback window closed");
+        uint256 buybackPrice = tokenDetails[tokenId].purchasePrice * (100 + BUYBACK_PREMIUM_PERCENTAGE) / 100;
+        require(msg.value >= buybackPrice, "Insufficient buyback amount");
+
+        address tokenOwner = ownerOf(tokenId);
+        _transfer(tokenOwner, address(this), tokenId);
+        payable(tokenOwner).transfer(buybackPrice);
+
+        emit TokenBoughtBack(tokenId, buybackPrice);
+    }
+
+    function transferToken(uint256 tokenId, address to) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        require(block.timestamp < TOKEN_EXPIRY, "Tokens have expired");
+        require(block.timestamp >= tokenDetails[tokenId].lastTransferTime + TRANSFER_WINDOW, "Transfer window not open");
+
+        uint256 royaltyAmount = tokenDetails[tokenId].purchasePrice * SECONDARY_ROYALTY_PERCENTAGE / 100;
+        require(msg.value >= royaltyAmount, "Insufficient royalty");
+
+        payable(owner()).transfer(royaltyAmount);
+        _transfer(msg.sender, to, tokenId);
+        tokenDetails[tokenId].lastTransferTime = block.timestamp;
+    }
+
+    function withdrawFunds() external onlyOwner {
+        uint256 balance = address(this).balance;
+        payable(owner()).transfer(balance);
+    }
+
+    // Override required functions
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+}
