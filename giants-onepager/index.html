@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giants Network — Peer‑to‑Peer Skill Transfer</title>
+  <meta name="description" content="A verifiable, peer‑to‑peer mentorship network with portable reputation and queryable expertise lineages." />
+  <meta property="og:title" content="Giants Network — Peer‑to‑Peer Skill Transfer" />
+  <meta property="og:description" content="A verifiable, peer‑to‑peer mentorship network with portable reputation and queryable expertise lineages." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0b1220" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #0e172a;
+      --muted: #9aa4b2;
+      --text: #e6edf3;
+      --accent: #7c5cff;
+      --accent-2: #00e5a8;
+      --danger: #ff6b6b;
+      --ok: #44d19f;
+      --grid: rgba(255,255,255,0.04);
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(124,92,255,0.18), transparent 50%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(0,229,168,0.15), transparent 50%),
+                  var(--bg);
+      line-height: 1.5;
+    }
+    a { color: var(--text); text-decoration: none; }
+    .container { width: min(1100px, 92vw); margin: 0 auto; }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: saturate(180%) blur(10px);
+      background: rgba(11,18,32,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .nav { display:flex; align-items:center; justify-content:space-between; padding: 14px 0; }
+    .brand { display:flex; gap:10px; align-items:center; font-weight: 700; letter-spacing: 0.2px; }
+    .logo { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset; }
+    .nav a { color: var(--muted); font-weight: 500; margin-left: 18px; }
+    .nav a:hover { color: var(--text); }
+    .cta { background: linear-gradient(135deg, var(--accent), #4e65ff); color: white; padding: 10px 14px; border-radius: 10px; font-weight: 600; border: 0; }
+
+    .hero { padding: 72px 0 36px; text-align: center; }
+    .headline { font-size: clamp(28px, 5vw, 48px); line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; margin: 10px 0; }
+    .subhead { color: var(--muted); font-size: clamp(14px, 2.3vw, 18px); max-width: 760px; margin: 14px auto 26px; }
+    .hero-cta { display:flex; gap:12px; justify-content:center; flex-wrap: wrap; }
+    .secondary { background: transparent; border: 1px solid rgba(255,255,255,0.14); color: var(--text); padding: 10px 14px; border-radius: 10px; font-weight: 600; }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 120%), var(--panel);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px; padding: 18px; position: relative;
+    }
+    .grid { display:grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+
+    .section { padding: 42px 0; }
+    .section h2 { font-size: clamp(20px, 3vw, 28px); margin: 0 0 14px; letter-spacing: -0.01em; }
+    .muted { color: var(--muted); }
+
+    .pill { font-size: 12px; color: var(--text); background: rgba(255,255,255,0.06); padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.1); display: inline-flex; align-items:center; gap:8px; }
+
+    .cards { display:grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+    .card { grid-column: span 6; }
+    .card-3 { grid-column: span 4; }
+    @media (max-width: 900px) {
+      .card, .card-3 { grid-column: span 12; }
+    }
+
+    .kq { display:grid; gap:10px; margin-top: 10px; }
+    .kq-item { display:flex; gap:10px; align-items:flex-start; color: var(--muted); }
+
+    .steps { display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .step { padding: 14px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.03); }
+    @media (max-width: 900px) { .steps { grid-template-columns: 1fr; } }
+
+    .metric { display:flex; align-items:center; gap:10px; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
+
+    .svg-wrap { background: radial-gradient(600px 200px at 50% -60%, rgba(124,92,255,0.18), transparent 60%), var(--panel); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 12px; }
+
+    footer { padding: 28px 0 42px; color: var(--muted); font-size: 14px; }
+    .footer-grid { display:flex; align-items:center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .tiny { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand"><div class="logo" aria-hidden="true"></div><span>Giants Network</span></div>
+      <nav>
+        <a href="#how">How it works</a>
+        <a href="#reputation">Reputation</a>
+        <a href="#queries">Queries</a>
+        <a href="#lineage">Lineage</a>
+        <a href="#publish" class="cta" style="margin-left:18px;">Get the One‑Pager</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero container">
+      <div class="pill">Peer‑to‑Peer Skill Transfer • Verifiable • Portable Reputation</div>
+      <h1 class="headline">Turn teaching and learning into a verifiable professional asset</h1>
+      <p class="subhead">Giants Network is a self‑sovereign, reputation‑based platform where every participant both teaches and learns. Sessions are co‑attested, outcomes are linked to real artifacts, and expertise becomes queryable across the network.</p>
+      <div class="hero-cta">
+        <a href="#how" class="cta">See how it works</a>
+        <a href="#reputation" class="secondary">Why it’s hard to game</a>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container cards">
+        <div class="panel card">
+          <h2>What can the network answer?</h2>
+          <div class="kq">
+            <div class="kq-item">🔍 Who’s the most experienced <strong>Plutus</strong> dev available for 3 hours this week?</div>
+            <div class="kq-item">📈 How many people need help with <strong>TypeScript</strong> right now?</div>
+            <div class="kq-item">🧭 Who taught whom? Explore <strong>expertise genealogy</strong> for Rust and Move.</div>
+            <div class="kq-item">🎯 Which mentors consistently produce <strong>high‑output, low‑noise</strong> apprentices?</div>
+          </div>
+        </div>
+        <div class="panel card">
+          <h2>Core concept</h2>
+          <p class="muted">No legacy credentials. Reputation emerges from verifiable activity: mutual session attestations, artifacts, and outcomes. Identity is self‑sovereign and claims are portable.</p>
+          <div class="steps" style="margin-top:10px;">
+            <div class="step">1. Create a profile (DID) and list availability or learning goals.</div>
+            <div class="step">2. Book a session. Align on goals, scope, and time (1‑4h).</div>
+            <div class="step">3. Co‑attest the session within 48h with a link to artifacts.</div>
+            <div class="step">4. Build portable reputation and discover lineages.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="container grid">
+        <div class="panel" style="grid-column: span 7;">
+          <h2>Availability‑first matching</h2>
+          <p class="muted">Search by skill and time window. Sort by verified hours, teaching outcomes, completion rate, and timezone proximity.</p>
+          <div class="kq" style="margin-top:12px;">
+            <div class="metric">⏱️ Time‑boxed sessions prevent burnout (1‑4h)</div>
+            <div class="metric">🧩 Controlled skill taxonomy for consistent tagging</div>
+            <div class="metric">🔗 Artifacts required: links to code, notes, or outcomes</div>
+            <div class="metric">🤝 Mutual signatures: both parties must confirm</div>
+          </div>
+        </div>
+        <div class="panel" style="grid-column: span 5;">
+          <h2>Session types</h2>
+          <ul class="muted" style="margin:10px 0 0 18px;">
+            <li>Teaching sessions: share expertise 1‑on‑1 or small groups</li>
+            <li>Learning requests: targeted help with context</li>
+            <li>Project pairing: work on real problems with shared outcomes</li>
+            <li>Code Roulette: optional auto‑matching on preferences</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="reputation" class="section">
+      <div class="container cards">
+        <div class="panel card-3">
+          <h2>Composable reputation</h2>
+          <p class="muted">Built from interaction history, not claims. Each session yields a signed record; ratings are bounded by rater credibility.</p>
+          <div class="kq" style="margin-top:10px;">
+            <div class="metric">📚 Decayed verified hours per skill</div>
+            <div class="metric">✅ Completion rate with no‑show penalties</div>
+            <div class="metric">⭐ Teaching quality weighted by credible raters</div>
+          </div>
+        </div>
+        <div class="panel card-3">
+          <h2>Integrity guardrails</h2>
+          <div class="kq">
+            <div class="metric">🧪 Reciprocity throttle: diminishing returns for repeated pairs</div>
+            <div class="metric">🧾 Artifact requirement: missing links cap hours</div>
+            <div class="metric">🕵️ Anomaly flags for collusion clusters</div>
+          </div>
+        </div>
+        <div class="panel card-3">
+          <h2>Simple scoring model</h2>
+          <p class="muted">Per skill, rankings combine activity and outcomes:</p>
+          <div class="kq">
+            <div class="metric">w1 × decayed_verified_hours</div>
+            <div class="metric">+ w2 × quality_score × log(1 + unique_apprentices)</div>
+            <div class="metric">+ w3 × completion_rate</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="queries" class="section">
+      <div class="container panel">
+        <h2>Queryable expertise</h2>
+        <div class="grid" style="margin-top:10px;">
+          <div style="grid-column: span 6;">
+            <p class="muted">Examples you can run:</p>
+            <ul class="muted" style="margin:10px 0 0 18px;">
+              <li>Teach <strong>Move</strong> in the next 7 days, 2–4h, beginner‑friendly</li>
+              <li><strong>Rust</strong> mentors with >60 verified hours and >4.4 teaching score</li>
+              <li>Developers with 100h across <strong>React</strong>, <strong>Node</strong>, and <strong>AWS</strong></li>
+              <li>Lineage depth ≥ 3 for <strong>DeFi Protocols</strong></li>
+            </ul>
+          </div>
+          <div style="grid-column: span 6;">
+            <div class="svg-wrap">
+              <svg viewBox="0 0 520 220" width="100%" height="220" role="img" aria-label="Lineage mockup">
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#7c5cff"/>
+                    <stop offset="100%" stop-color="#00e5a8"/>
+                  </linearGradient>
+                </defs>
+                <!-- edges -->
+                <path d="M80,60 C140,60 160,40 220,60" stroke="url(#g1)" stroke-width="2" fill="none" opacity="0.8"/>
+                <path d="M80,60 C140,60 160,80 220,120" stroke="url(#g1)" stroke-width="2" fill="none" opacity="0.6"/>
+                <path d="M220,60 C280,60 300,40 360,60" stroke="#93e5d4" stroke-width="1.5" fill="none" opacity="0.7"/>
+                <path d="M220,120 C280,120 300,140 360,160" stroke="#b5a6ff" stroke-width="1.5" fill="none" opacity="0.7"/>
+                <!-- nodes -->
+                <g>
+                  <circle cx="80" cy="60" r="18" fill="#18223a" stroke="#43506b"/>
+                  <text x="80" y="65" text-anchor="middle" font-size="10" fill="#cbd5e1">Mentor A</text>
+                </g>
+                <g>
+                  <circle cx="220" cy="60" r="18" fill="#18223a" stroke="#43506b"/>
+                  <text x="220" y="65" text-anchor="middle" font-size="10" fill="#cbd5e1">You</text>
+                </g>
+                <g>
+                  <circle cx="220" cy="120" r="18" fill="#18223a" stroke="#43506b"/>
+                  <text x="220" y="125" text-anchor="middle" font-size="10" fill="#cbd5e1">Peer</text>
+                </g>
+                <g>
+                  <circle cx="360" cy="60" r="18" fill="#18223a" stroke="#43506b"/>
+                  <text x="360" y="65" text-anchor="middle" font-size="10" fill="#cbd5e1">Apprentice</text>
+                </g>
+                <g>
+                  <circle cx="360" cy="160" r="18" fill="#18223a" stroke="#43506b"/>
+                  <text x="360" y="165" text-anchor="middle" font-size="10" fill="#cbd5e1">Team</text>
+                </g>
+              </svg>
+            </div>
+            <p class="tiny muted" style="margin-top:6px;">Lineage view: who taught whom across skills and time. Each edge is a co‑attested session record.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lineage" class="section">
+      <div class="container cards">
+        <div class="panel card">
+          <h2>Why it’s valuable</h2>
+          <ul class="muted" style="margin:10px 0 0 18px;">
+            <li>Discover <strong>great teachers</strong> by outcomes, not claims</li>
+            <li>Prove <strong>skill growth</strong> with verifiable session history</li>
+            <li>Hire from a pool of <strong>skill‑verified developers</strong></li>
+            <li>Visualize <strong>expertise lineages</strong> across your community or org</li>
+          </ul>
+        </div>
+        <div class="panel card">
+          <h2>Who it’s for</h2>
+          <ul class="muted" style="margin:10px 0 0 18px;">
+            <li>Engineers who love to teach (and be recognized for it)</li>
+            <li>Hungry learners who want targeted, high‑signal help</li>
+            <li>Teams building internal knowledge‑sharing programs</li>
+            <li>Communities and universities growing mentorship graphs</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="publish" class="section">
+      <div class="container panel">
+        <h2>Try it, share it</h2>
+        <div class="grid" style="margin-top:10px;">
+          <div style="grid-column: span 7;">
+            <p class="muted">This page is a simple one‑pager mockup you can publish immediately. Drag‑and‑drop to Netlify or Vercel, or serve locally. Link it in docs, tweets, or investor updates.</p>
+            <div class="kq" style="margin-top:8px;">
+              <div class="metric">🚀 Single HTML file — dead simple to host</div>
+              <div class="metric">🧱 Clean sections map to MVP scope</div>
+              <div class="metric">🖼️ Inline SVG for lineage preview</div>
+            </div>
+          </div>
+          <div style="grid-column: span 5;">
+            <div class="panel" style="background: rgba(255,255,255,0.03)">
+              <div class="muted" style="font-size:14px;">
+                Local preview:
+                <pre class="muted" style="white-space:pre-wrap;background:rgba(255,255,255,0.04);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">python3 -m http.server 8080
+# open http://localhost:8080/giants-onepager/index.html</pre>
+                Deploy options:
+                <ul style="margin: 6px 0 0 18px;">
+                  <li>Netlify: drag this file into a new site</li>
+                  <li>Vercel/Surge: deploy the folder</li>
+                  <li>GitHub Pages: host from the repo root</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-grid">
+      <div>© <span id="year"></span> Giants Network</div>
+      <div class="tiny">Design mockup for concept demonstration. No tracking. No cookies.</div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
